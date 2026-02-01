@@ -30,13 +30,125 @@
             background: var(--darker);
         }
 
+        /* ==================== USB INSERT SCREEN ==================== */
+        #usb-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            cursor: pointer;
+        }
+
+        .usb-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: usb-pulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(0, 200, 255, 0.5));
+        }
+
+        @keyframes usb-pulse {
+            0%, 100% { transform: translateY(0); opacity: 0.7; }
+            50% { transform: translateY(-10px); opacity: 1; }
+        }
+
+        .usb-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .usb-hint {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            margin-top: 40px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* ==================== INIT SCREEN ==================== */
+        #init-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            z-index: 10001;
+            padding: 40px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .init-terminal {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00ff66;
+            line-height: 1.6;
+            text-shadow: 0 0 5px rgba(0, 255, 100, 0.5);
+            width: 100%;
+            max-width: 100%;
+            padding-bottom: 50px;
+        }
+
+        .init-line {
+            opacity: 0;
+            animation: initFadeIn 0.1s forwards;
+        }
+
+        @keyframes initFadeIn {
+            to { opacity: 1; }
+        }
+
+        .init-line.error {
+            color: #ff4444;
+        }
+
+        .init-line.warning {
+            color: #ffaa00;
+        }
+
+        .init-line.success {
+            color: #00ff66;
+        }
+
+        .init-line.info {
+            color: #00aaff;
+        }
+
+        .init-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: #00ff66;
+            animation: cursorBlink 0.5s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
         /* ==================== BOOT SCREEN ==================== */
         #boot-screen {
             position: fixed;
             width: 100%;
             height: 100%;
             background: #000;
-            display: flex;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -1230,6 +1342,18 @@
     </style>
 </head>
 <body>
+    <!-- USB Insert Screen -->
+    <div id="usb-screen">
+        <div class="usb-icon">🔌</div>
+        <div class="usb-text">INSÉRER CLÉ USB</div>
+        <div class="usb-hint">[ Cliquer pour insérer ]</div>
+    </div>
+
+    <!-- Init Screen -->
+    <div id="init-screen">
+        <div class="init-terminal" id="init-terminal"></div>
+    </div>
+
     <!-- Boot Screen -->
     <div id="boot-screen">
         <div class="apple-logo">🍎</div>
@@ -1449,16 +1573,219 @@
     </div>
 
     <script>
+        // ==================== AUDIO SYSTEM ====================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep(frequency = 800, duration = 0.05, type = 'square') {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() {
+            playBeep(523, 0.08); // C5
+            setTimeout(() => playBeep(659, 0.08), 80); // E5
+            setTimeout(() => playBeep(784, 0.12), 160); // G5
+        }
+
+        function playErrorSound() {
+            playBeep(200, 0.15, 'sawtooth');
+            setTimeout(() => playBeep(150, 0.2, 'sawtooth'), 150);
+        }
+
+        function playWarningSound() {
+            playBeep(440, 0.1);
+            setTimeout(() => playBeep(440, 0.1), 150);
+        }
+
+        function playBootSound() {
+            playBeep(261, 0.15); // C4
+            setTimeout(() => playBeep(329, 0.15), 150); // E4
+            setTimeout(() => playBeep(392, 0.15), 300); // G4
+            setTimeout(() => playBeep(523, 0.3), 450); // C5
+        }
+
+        function playTypeSound() {
+            playBeep(1200 + Math.random() * 400, 0.02, 'square');
+        }
+
+        function playUSBInsertSound() {
+            playBeep(600, 0.1);
+            setTimeout(() => playBeep(800, 0.1), 100);
+            setTimeout(() => playBeep(1000, 0.15), 200);
+        }
+
+        // ==================== INIT LINES ====================
+        const initLines = [
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+            { text: "       GP-ONE BIOS v2.7.3 - MURKOFF SCIENTIFIC DIVISION", type: "info" },
+            { text: "       Copyright (C) 2017 Murkoff Corporation.", type: "" },
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+            { text: "", type: "" },
+            { text: "POST: Power-On Self Test...", type: "" },
+            { text: "[OK] CMOS Battery Status: GOOD", type: "success", sound: "beep" },
+            { text: "[OK] Keyboard Interface: PS/2 Compatible", type: "success", sound: "beep" },
+            { text: "[OK] Mouse Interface: USB HID Device", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "Detecting USB Device...", type: "", sound: "beep" },
+            { text: "USB Port 3.0: Device Connected", type: "" },
+            { text: "Reading device signature...", type: "" },
+            { text: "╔════════════════════════════════════════════════════════════╗", type: "info" },
+            { text: "║  USB Device: MURKOFF_SECURE_KEY_2017                       ║", type: "success", sound: "success" },
+            { text: "║  Serial: MK-0917-GP1-DENZ-7A3F                             ║", type: "" },
+            { text: "║  Capacity: 32GB | Encrypted: AES-256                       ║", type: "" },
+            { text: "╚════════════════════════════════════════════════════════════╝", type: "info" },
+            { text: "", type: "" },
+            { text: "Initializing secure boot sequence...", type: "" },
+            { text: "───────────────────────────────────────────────────────────────", type: "" },
+            { text: "", type: "" },
+            { text: "MEMORY TEST:", type: "info" },
+            { text: "  Testing block 0x00000000 - 0x3FFFFFFF... OK", type: "", sound: "beep" },
+            { text: "  Testing block 0x40000000 - 0x7FFFFFFF... OK", type: "", sound: "beep" },
+            { text: "  Testing block 0x80000000 - 0xBFFFFFFF... OK", type: "", sound: "beep" },
+            { text: "  Testing block 0xC0000000 - 0xFFFFFFFF... OK", type: "", sound: "beep" },
+            { text: "[OK] Memory Test Complete: 16384 MB DDR4 @ 2400MHz", type: "success", sound: "success" },
+            { text: "", type: "" },
+            { text: "HARDWARE DETECTION:", type: "info" },
+            { text: "[OK] CPU: Intel Xeon E5-2690 v4 @ 3.40GHz (14 cores)", type: "success", sound: "beep" },
+            { text: "[OK] GPU: NVIDIA Tesla K80 24GB - CUDA 8.0 Enabled", type: "success", sound: "beep" },
+            { text: "[OK] Storage: Samsung 960 PRO 2TB NVMe SSD", type: "success", sound: "beep" },
+            { text: "[OK] Network: Intel I350-T4 Gigabit Ethernet", type: "success", sound: "beep" },
+            { text: "[OK] Neural Interface: GP-ONE Vision System v1.7.2", type: "success", sound: "beep" },
+            { text: "[OK] Biometric Scanner: Retina + Fingerprint Module", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "LOADING KERNEL MODULES:", type: "info" },
+            { text: "  insmod /lib/modules/murkoff_crypto.ko", type: "" },
+            { text: "    → Cryptographic engine loaded", type: "success", sound: "beep" },
+            { text: "  insmod /lib/modules/vision_overlay.ko", type: "" },
+            { text: "    → Visual overlay system loaded", type: "success", sound: "beep" },
+            { text: "  insmod /lib/modules/subject_tracking.ko", type: "" },
+            { text: "    → Subject tracking algorithms loaded", type: "success", sound: "beep" },
+            { text: "  insmod /lib/modules/biometric_scan.ko", type: "" },
+            { text: "    → Biometric verification loaded", type: "success", sound: "beep" },
+            { text: "  insmod /lib/modules/neural_interface.ko", type: "" },
+            { text: "    → Neural bridge established", type: "success", sound: "beep" },
+            { text: "  insmod /lib/modules/walrider_containment.ko", type: "" },
+            { text: "    → Containment protocols active", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "───────────────────────────────────────────────────────────────", type: "" },
+            { text: "[WARNING] Security clearance verification required", type: "warning", sound: "warning" },
+            { text: "───────────────────────────────────────────────────────────────", type: "" },
+            { text: "", type: "" },
+            { text: "Authenticating USB security key...", type: "" },
+            { text: "  Reading certificate: /dev/usb0/cert.pem", type: "" },
+            { text: "  Verifying signature...", type: "" },
+            { text: "  Checking expiration: 2017-12-31 [VALID]", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "Decrypting secure payload:", type: "" },
+            { text: "  [████████████████████████████████████████] 100%", type: "success" },
+            { text: "", type: "" },
+            { text: "[OK] Authentication successful - CLEARANCE: LEVEL 5", type: "success", sound: "success" },
+            { text: "", type: "" },
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+            { text: "  MURKOFF Lab OS 2026 Scientific Edition", type: "info" },
+            { text: "  Build: 2017.09.17-GP1-CLASSIFIED", type: "" },
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+            { text: "", type: "" },
+            { text: "System Configuration:", type: "info" },
+            { text: "  Date.........: 17 September 2017", type: "" },
+            { text: "  Project......: GP-ONE (Genesis Project)", type: "" },
+            { text: "  Status.......: ACTIVE", type: "success" },
+            { text: "  Operator.....: Dr. Harry MURKOFF", type: "" },
+            { text: "  Location.....: Mount Massive Asylum - Lab B", type: "" },
+            { text: "", type: "" },
+            { text: "Mounting filesystems...", type: "" },
+            { text: "  /dev/sda1 → /boot [ext4]", type: "success", sound: "beep" },
+            { text: "  /dev/sda2 → /     [ext4]", type: "success", sound: "beep" },
+            { text: "  /dev/sda3 → /data [encrypted]", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "Starting system services...", type: "" },
+            { text: "  → sshd.service.................. [STARTED]", type: "success", sound: "beep" },
+            { text: "  → networkd.service.............. [STARTED]", type: "success", sound: "beep" },
+            { text: "  → gpone-vision.service.......... [STARTED]", type: "success", sound: "beep" },
+            { text: "  → subject-monitor.service....... [STARTED]", type: "success", sound: "beep" },
+            { text: "  → containment-alert.service..... [STARTED]", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "[WARNING] 3 subjects require attention - See daily report", type: "warning", sound: "warning" },
+            { text: "", type: "" },
+            { text: "Initializing graphical interface...", type: "info" },
+            { text: "  Loading display driver... OK", type: "success", sound: "beep" },
+            { text: "  Starting compositor... OK", type: "success", sound: "beep" },
+            { text: "  Loading desktop environment... OK", type: "success", sound: "beep" },
+            { text: "", type: "" },
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+            { text: "            SYSTEM READY - STARTING GUI", type: "success", sound: "boot" },
+            { text: "═══════════════════════════════════════════════════════════════", type: "info" },
+        ];
+
+        // ==================== USB & INIT SEQUENCE ====================
+        function startUSBSequence() {
+            // Resume audio context (required by browsers)
+            audioCtx.resume();
+            
+            playUSBInsertSound();
+            
+            const usbScreen = document.getElementById('usb-screen');
+            const initScreen = document.getElementById('init-screen');
+            const bootScreen = document.getElementById('boot-screen');
+            const terminal = document.getElementById('init-terminal');
+
+            // Hide USB, show init
+            usbScreen.style.display = 'none';
+            initScreen.style.display = 'flex';
+
+            // Display init lines one by one
+            let lineIndex = 0;
+            const interval = setInterval(() => {
+                if (lineIndex < initLines.length) {
+                    const line = initLines[lineIndex];
+                    const lineEl = document.createElement('div');
+                    lineEl.className = 'init-line ' + line.type;
+                    lineEl.textContent = line.text || '\u00A0';
+                    lineEl.style.animationDelay = '0s';
+                    terminal.appendChild(lineEl);
+                    // Scroll the init screen to bottom
+                    initScreen.scrollTop = initScreen.scrollHeight;
+                    
+                    // Play sound based on type
+                    if (line.sound === 'beep') playTypeSound();
+                    else if (line.sound === 'success') playSuccessSound();
+                    else if (line.sound === 'warning') playWarningSound();
+                    else if (line.sound === 'boot') playBootSound();
+                    else if (line.text && line.text.length > 0) playTypeSound();
+                    
+                    lineIndex++;
+                } else {
+                    clearInterval(interval);
+                    // Wait a bit then start boot screen
+                    setTimeout(() => {
+                        initScreen.style.display = 'none';
+                        bootScreen.style.display = 'flex';
+                        // Start normal boot sequence
+                        setTimeout(() => {
+                            bootScreen.style.opacity = '0';
+                            setTimeout(() => {
+                                bootScreen.style.display = 'none';
+                                document.getElementById('login-screen').style.display = 'flex';
+                                createParticles();
+                            }, 800);
+                        }, 2800);
+                    }, 1000);
+                }
+            }, 60);
+        }
+
         // ==================== BOOT ====================
         window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('boot-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('boot-screen').style.display = 'none';
-                    document.getElementById('login-screen').style.display = 'flex';
-                    createParticles();
-                }, 800);
-            }, 2800);
+            // Setup USB click handler
+            document.getElementById('usb-screen').addEventListener('click', startUSBSequence);
         };
 
         function createParticles() {
