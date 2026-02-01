@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS 2026 - Scientific Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Écran de connexion */
+        #login-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2d1b4e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #login-screen::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(100, 200, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .username {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .password-input {
+            width: 300px;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .password-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 14px;
+            height: 20px;
+            margin-bottom: 10px;
+        }
+
+        .login-btn {
+            width: 300px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 500;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Bureau macOS */
+        #desktop {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0d1b2a 100%);
+            position: relative;
+            display: none;
+        }
+
+        /* Barre de menu */
+        .menu-bar {
+            height: 28px;
+            background: rgba(20, 25, 35, 0.85);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 13px;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-item {
+            margin-right: 20px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            opacity: 0.7;
+        }
+
+        .menu-right {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Dock */
+        .dock {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 35, 45, 0.7);
+            backdrop-filter: blur(30px);
+            border-radius: 20px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dock-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            position: relative;
+        }
+
+        .dock-icon:hover {
+            transform: translateY(-10px);
+        }
+
+        /* Dossiers sur le bureau */
+        .desktop-icons {
+            position: absolute;
+            top: 50px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .folder-icon {
+            width: 80px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .folder-icon:hover {
+            transform: scale(1.05);
+        }
+
+        .folder-img {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            border-radius: 10px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .folder-name {
+            color: white;
+            font-size: 12px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Notification d'erreur */
+        .notification {
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            background: rgba(30, 35, 45, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 350px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .notification-icon {
+            width: 30px;
+            height: 30px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .notification-title {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .notification-message {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Jeu */
+        #game-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 25, 35, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            overflow: hidden;
+        }
+
+        .window-header {
+            height: 40px;
+            background: rgba(30, 35, 45, 0.9);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .window-btn.close { background: #ff5f56; }
+        .window-btn.minimize { background: #ffbd2e; }
+        .window-btn.maximize { background: #27c93f; }
+
+        .window-title {
+            flex: 1;
+            text-align: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        #game-canvas {
+            display: block;
+            background: #0a0e27;
+        }
+
+        .game-info {
+            background: rgba(30, 35, 45, 0.9);
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Screamer popup */
+        #screamer-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: flash 0.1s infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { background: black; }
+            50% { background: red; }
+        }
+
+        .screamer-content {
+            text-align: center;
+            color: red;
+            font-size: 72px;
+            font-weight: bold;
+            text-shadow: 0 0 20px red;
+            animation: shake 0.1s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-10px, 10px) rotate(-5deg); }
+            75% { transform: translate(10px, -10px) rotate(5deg); }
+        }
+
+        .close-screamer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: black;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Écran de connexion -->
+    <div id="login-screen">
+        <div class="login-box">
+            <div class="user-avatar">🧬</div>
+            <div class="username">Laboratoire Scientifique</div>
+            <input type="password" class="password-input" id="password" placeholder="Entrez le mot de passe">
+            <div class="error-message" id="error-msg"></div>
+            <button class="login-btn" onclick="login()">Connexion</button>
+        </div>
+    </div>
+
+    <!-- Bureau -->
+    <div id="desktop">
+        <!-- Barre de menu -->
+        <div class="menu-bar">
+            <div class="menu-item">🍎</div>
+            <div class="menu-item">Finder</div>
+            <div class="menu-item">Fichier</div>
+            <div class="menu-item">Édition</div>
+            <div class="menu-item">Présentation</div>
+            <div class="menu-right">
+                <div class="menu-item">🔋 100%</div>
+                <div class="menu-item">📶</div>
+                <div class="menu-item" id="time">12:00</div>
+            </div>
+        </div>
+
+        <!-- Dossiers sur le bureau -->
+        <div class="desktop-icons">
+            <div class="folder-icon" onclick="showError('Données IA')">
+                <div class="folder-img">🧠</div>
+                <div class="folder-name">Données IA</div>
+            </div>
+            <div class="folder-icon" onclick="showError('Recherches')">
+                <div class="folder-img">🔬</div>
+                <div class="folder-name">Recherches</div>
+            </div>
+            <div class="folder-icon" onclick="showError('Expériences')">
+                <div class="folder-img">⚗️</div>
+                <div class="folder-name">Expériences</div>
+            </div>
+            <div class="folder-icon" onclick="showError('Simulations')">
+                <div class="folder-img">🌌</div>
+                <div class="folder-name">Simulations</div>
+            </div>
+            <div class="folder-icon" onclick="showError('Rapports')">
+                <div class="folder-img">📊</div>
+                <div class="folder-name">Rapports</div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <div class="notification-header">
+                <div class="notification-icon">⚠️</div>
+                <div class="notification-title">Erreur d'accès</div>
+            </div>
+            <div class="notification-message" id="notification-text">
+                Accès refusé. Autorisation requise pour ouvrir ce dossier.
+            </div>
+        </div>
+
+        <!-- Dock -->
+        <div class="dock">
+            <div class="dock-icon">📁</div>
+            <div class="dock-icon">🌐</div>
+            <div class="dock-icon">📧</div>
+            <div class="dock-icon" onclick="openGame()">🎮</div>
+            <div class="dock-icon">⚙️</div>
+        </div>
+
+        <!-- Fenêtre de jeu -->
+        <div id="game-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="window-btn close" onclick="closeGame()"></div>
+                    <div class="window-btn minimize"></div>
+                    <div class="window-btn maximize"></div>
+                </div>
+                <div class="window-title">Quantum Maze - Level <span id="level-display">1</span></div>
+            </div>
+            <canvas id="game-canvas" width="600" height="600"></canvas>
+            <div class="game-info">
+                <div>❤️ Vies: <span id="lives">3</span></div>
+                <div>⭐ Score: <span id="score">0</span></div>
+                <div>🎯 Niveau: <span id="level">1</span>/5</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screamer Popup -->
+    <div id="screamer-popup">
+        <button class="close-screamer" onclick="closeScreamer()">Fermer</button>
+        <div class="screamer-content">
+            ☠️ GAME OVER ☠️<br>
+            <div style="font-size: 36px; margin-top: 20px;">
+                VOUS AVEZ ÉCHOUÉ!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Login
+        function login() {
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            if (password === 'Shamballa023') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('desktop').style.display = 'block';
+                updateTime();
+                setInterval(updateTime, 1000);
+            } else {
+                errorMsg.textContent = 'Mot de passe incorrect';
+                document.getElementById('password').value = '';
+            }
+        }
+
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+
+        function updateTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('time').textContent = time;
+        }
+
+        // Notification d'erreur
+        let errorSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGmi78OScTgwOUKrm8LdjHAU5k9n0y3kpBSRzxO3alEMJElyx6OyrWBIIRKXh8bllHgU2jdXzzoMtBiJwwO3dnEoLC1Kx6/C0YxYDPJfe9Mp3JwUjcsDu3I1ACAN+yO7djksLDFO07u+yYhQCPZfi9sl1JQQjcL/s251LCwtStO3vsmIUAj2X4vbJdSUEI3C/7NudSwsLUrTt77JiFAI9l+L2yXUlBCNwv+zbnUsLC1K07e+yYhQCPZfi9sl1JQQjcL/s251LCwtStO3vsmIUAj2X4vbJdSUEI3C/7NudSwsLUrTt77JiFAI9l+L2yXUlBCNwv+zbnUsLC1K07e+yYhQCPZfi9sl1JQQjcL/s251LCwtStO3vsmIUAj2X4vbJdSUEI3C/7NudSwsLUrTt77JiFAI9l+L2yXUlBCNwv+zbnUsLC1K07e+yYhQCPZfi9sl1JQQjcL/s251LCwtStO3vsmIU');
+
+        function showError(folderName) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+
+            notificationText.textContent = `Accès refusé: "${folderName}". Autorisation de niveau 5 requise.`;
+            notification.style.display = 'block';
+
+            // Jouer le son d'erreur
+            errorSound.play().catch(() => {});
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Jeu
+        let canvas, ctx;
+        let gameState = {
+            player: { x: 50, y: 50, size: 20, speed: 3 },
+            enemy: { x: 500, y: 500, size: 20, speed: 2 },
+            level: 1,
+            lives: 3,
+            score: 0,
+            walls: [],
+            goal: { x: 550, y: 550, size: 25 },
+            keys: {}
+        };
+
+        function openGame() {
+            document.getElementById('game-window').style.display = 'block';
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+
+            resetGame();
+            generateMaze();
+            gameLoop();
+        }
+
+        function closeGame() {
+            document.getElementById('game-window').style.display = 'none';
+        }
+
+        function resetGame() {
+            gameState.player = { x: 50, y: 50, size: 20, speed: 3 };
+            gameState.enemy = { x: 500, y: 500, size: 20, speed: 2 };
+            gameState.walls = [];
+        }
+
+        function generateMaze() {
+            gameState.walls = [];
+            const wallCount = 5 + gameState.level * 3;
+
+            for (let i = 0; i < wallCount; i++) {
+                gameState.walls.push({
+                    x: Math.random() * 500 + 50,
+                    y: Math.random() * 500 + 50,
+                    width: Math.random() * 100 + 50,
+                    height: 20
+                });
+            }
+        }
+
+        function gameLoop() {
+            if (document.getElementById('game-window').style.display === 'none') return;
+
+            update();
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Déplacement du joueur
+            if (gameState.keys['ArrowUp'] || gameState.keys['z']) {
+                gameState.player.y -= gameState.player.speed;
+            }
+            if (gameState.keys['ArrowDown'] || gameState.keys['s']) {
+                gameState.player.y += gameState.player.speed;
+            }
+            if (gameState.keys['ArrowLeft'] || gameState.keys['q']) {
+                gameState.player.x -= gameState.player.speed;
+            }
+            if (gameState.keys['ArrowRight'] || gameState.keys['d']) {
+                gameState.player.x += gameState.player.speed;
+            }
+
+            // Limites du canvas
+            gameState.player.x = Math.max(0, Math.min(canvas.width - gameState.player.size, gameState.player.x));
+            gameState.player.y = Math.max(0, Math.min(canvas.height - gameState.player.size, gameState.player.y));
+
+            // Collision avec les murs
+            gameState.walls.forEach(wall => {
+                if (checkCollision(gameState.player, wall)) {
+                    // Repousser le joueur
+                    if (gameState.keys['ArrowUp'] || gameState.keys['z']) gameState.player.y += gameState.player.speed;
+                    if (gameState.keys['ArrowDown'] || gameState.keys['s']) gameState.player.y -= gameState.player.speed;
+                    if (gameState.keys['ArrowLeft'] || gameState.keys['q']) gameState.player.x += gameState.player.speed;
+                    if (gameState.keys['ArrowRight'] || gameState.keys['d']) gameState.player.x -= gameState.player.speed;
+                }
+            });
+
+            // IA de l'ennemi - poursuit le joueur
+            const dx = gameState.player.x - gameState.enemy.x;
+            const dy = gameState.player.y - gameState.enemy.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 0) {
+                gameState.enemy.x += (dx / dist) * gameState.enemy.speed;
+                gameState.enemy.y += (dy / dist) * gameState.enemy.speed;
+            }
+
+            // Collision avec l'ennemi
+            if (checkCollision(gameState.player, gameState.enemy)) {
+                gameState.lives--;
+                updateUI();
+
+                if (gameState.lives <= 0) {
+                    showScreamer();
+                } else {
+                    gameState.player.x = 50;
+                    gameState.player.y = 50;
+                    gameState.enemy.x = 500;
+                    gameState.enemy.y = 500;
+                }
+            }
+
+            // Atteindre l'objectif
+            if (checkCollision(gameState.player, gameState.goal)) {
+                gameState.score += 100;
+                gameState.level++;
+                updateUI();
+
+                if (gameState.level > 5) {
+                    alert('Félicitations! Vous avez terminé tous les niveaux!');
+                    gameState.level = 1;
+                    gameState.lives = 3;
+                    gameState.score = 0;
+                }
+
+                resetGame();
+                generateMaze();
+                gameState.enemy.speed += 0.3;
+            }
+        }
+
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + (obj2.width || obj2.size) &&
+                   obj1.x + obj1.size > obj2.x &&
+                   obj1.y < obj2.y + (obj2.height || obj2.size) &&
+                   obj1.y + obj1.size > obj2.y;
+        }
+
+        function draw() {
+            // Fond
+            ctx.fillStyle = '#0a0e27';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grille
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Murs
+            ctx.fillStyle = '#4a5568';
+            gameState.walls.forEach(wall => {
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            });
+
+            // Objectif
+            ctx.fillStyle = '#27c93f';
+            ctx.beginPath();
+            ctx.arc(gameState.goal.x, gameState.goal.y, gameState.goal.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎯', gameState.goal.x, gameState.goal.y + 7);
+
+            // Joueur (cube bleu)
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(gameState.player.x, gameState.player.y, gameState.player.size, gameState.player.size);
+            ctx.strokeStyle = '#60a5fa';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(gameState.player.x, gameState.player.y, gameState.player.size, gameState.player.size);
+
+            // Ennemi (triangle rouge)
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(gameState.enemy.x + gameState.enemy.size / 2, gameState.enemy.y);
+            ctx.lineTo(gameState.enemy.x, gameState.enemy.y + gameState.enemy.size);
+            ctx.lineTo(gameState.enemy.x + gameState.enemy.size, gameState.enemy.y + gameState.enemy.size);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#f87171';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function updateUI() {
+            document.getElementById('lives').textContent = gameState.lives;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('level-display').textContent = gameState.level;
+        }
+
+        // Contrôles clavier
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key] = false;
+        });
+
+        // Screamer
+        function showScreamer() {
+            closeGame();
+            document.getElementById('screamer-popup').style.display = 'flex';
+            // Ici vous ajouterez le son MP3 plus tard
+        }
+
+        function closeScreamer() {
+            document.getElementById('screamer-popup').style.display = 'none';
+            gameState.level = 1;
+            gameState.lives = 3;
+            gameState.score = 0;
+            gameState.enemy.speed = 2;
+            updateUI();
+        }
+    </script>
+</body>
+</html>
