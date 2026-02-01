@@ -547,8 +547,9 @@
             background: rgba(10, 15, 25, 0.98);
             border-radius: 16px;
             overflow: hidden;
-            max-width: 800px;
-            width: 90%;
+            max-width: 95vw;
+            width: 1200px;
+            max-height: 95vh;
         }
 
         .video-header {
@@ -583,11 +584,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            min-height: 500px;
         }
 
-        .video-container video {
+        .video-container video,
+        .video-container iframe {
             width: 100%;
             height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .video-placeholder {
@@ -1314,11 +1321,15 @@
                 <div class="video-dot green"></div>
                 <div class="video-title">GP-ONE_ARCHIVE_17-09-2017.mp4</div>
             </div>
-            <div class="video-container" style="position: relative;">
-                <!-- Video -->
-                <video id="secret-video" controls style="position: relative; z-index: 0;">
-                    <source src="vidéo-2207-denz.mp4" type="video/mp4">
-                </video>
+            <div class="video-container">
+                <!-- YouTube Video - Remplace VIDEO_ID_HERE par l'ID de ta vidéo YouTube -->
+                <iframe id="secret-video" 
+                    src="" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                    style="z-index: 0;">
+                </iframe>
                 
                 <!-- Robot Vision Overlay -->
                 <div class="robot-overlay">
@@ -1498,11 +1509,18 @@
 
         // ==================== SECRET FILE ====================
         let fileUnlocked = false;
+        
+        // REMPLACE 'VIDEO_ID_HERE' par l'ID de ta vidéo YouTube
+        // Exemple: si ta vidéo est https://www.youtube.com/watch?v=dQw4w9WgXcQ
+        // alors l'ID est: dQw4w9WgXcQ
+        const YOUTUBE_VIDEO_ID = 'VIDEO_ID_HERE';
 
         function openSecretFile() {
             if (fileUnlocked) {
                 document.getElementById('video-modal').style.display = 'flex';
-                document.getElementById('secret-video').play();
+                // Charger la vidéo YouTube avec autoplay
+                const iframe = document.getElementById('secret-video');
+                iframe.src = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`;
                 startRobotOverlay();
             } else {
                 document.getElementById('password-modal').style.display = 'flex';
@@ -1538,7 +1556,8 @@
 
         function closeVideoModal() {
             document.getElementById('video-modal').style.display = 'none';
-            document.getElementById('secret-video').pause();
+            // Arrêter la vidéo YouTube en vidant le src
+            document.getElementById('secret-video').src = '';
             stopRobotOverlay();
         }
 
